@@ -1,0 +1,130 @@
+local player = game.Players.LocalPlayer
+local mouse = player:GetMouse()
+local frame = script.Parent
+local aimbotButton = frame:FindFirstChild("AimbotButton")
+local flyButton = frame:FindFirstChild("FlyButton")
+local hitboxButton = frame:FindFirstChild("HitboxExpanderButton")
+local closeButton = frame:FindFirstChild("CloseButton")
+
+local flying = false
+local aimbotActive = false
+local hitboxExpanded = false
+frame.Visible = false -- Start with the menu hidden
+
+-- Function to toggle visibility of the menu
+local function toggleMenu()
+    frame.Visible = not frame.Visible
+end
+
+-- Function to handle Aimbot
+local function aimbot()
+    aimbotActive = not aimbotActive
+    if aimbotActive then
+        print("Aimbot activated!")
+        while aimbotActive do
+            wait(0.1)
+            local target = nil
+            local closestDistance = math.huge
+            for _, v in pairs(game.Players:GetPlayers()) do
+                if v ~= player and v.Character and v.Character:FindFirstChild("Head") then
+                    local distance = (v.Character.Head.Position - player.Character.Head.Position).magnitude
+                    if distance < closestDistance then
+                        closestDistance = distance
+                        target = v.Character.Head
+                    end
+                end
+            end
+            if target then
+                mouse.Target = target
+            end
+        end
+    else
+        print("Aimbot deactivated!")
+    end
+end
+
+-- Function to handle Fly
+local function fly()
+    flying = not flying
+    if flying then
+        print("Fly activated!")
+        local bodyVelocity = Instance.new("BodyVelocity")
+        bodyVelocity.Velocity = Vector3.new(0, 50, 0)
+        bodyVelocity.MaxForce = Vector3.new(0, math.huge, 0)
+        bodyVelocity.Parent = player.Character.HumanoidRootPart
+        
+        while flying do
+            wait(0.1)
+            bodyVelocity.Velocity = Vector3.new(mouse.Hit.X - player.Character.HumanoidRootPart.Position.X, 50, mouse.Hit.Z - player.Character.HumanoidRootPart.Position.Z)
+        end
+        bodyVelocity:Destroy()
+    else
+        print("Fly deactivated!")
+    end
+end
+
+-- Function to handle Hitbox Expander
+local function hitboxExpander()
+    hitboxExpanded = not hitboxExpanded
+    if hitboxExpanded then
+        print("Hitbox Expander activated!")
+        for _, player in pairs(game.Players:GetPlayers()) do
+            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                player.Character.HumanoidRootPart.Size = Vector3.new(5, 5, 5) -- Example size
+            end
+        end
+    else
+        print("Hitbox Expander deactivated!")
+        for _, player in pairs(game.Players:GetPlayers()) do
+            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                player.Character.HumanoidRootPart.Size = Vector3.new(2, 2, 2) -- Reset to original size
+            end
+        end
+    end
+end
+
+-- Function to close the menu
+local function closeMenu()
+    frame.Visible = false
+end
+
+-- Button connections
+aimbotButton.MouseButton1Click:Connect(aimbot)
+flyButton.MouseButton1Click:Connect(fly)
+hitboxButton.MouseButton1Click:Connect(hitboxExpander)
+closeButton.MouseButton1Click:Connect(closeMenu)
+
+-- Draggable functionality
+local dragging
+local dragInput
+local dragStart
+local startPos
+
+local function update(input)
+    local delta = input.Position - dragStart
+    frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+frame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = frame.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+frame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        if dragging then
+            update(input)
+        end
+    end
+end)
+
+-- Mobile support (
